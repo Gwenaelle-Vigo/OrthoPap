@@ -1,70 +1,70 @@
-# Pipeline pour la Création d'une Base de Données de Gènes Orthologues
+# Pipeline for the Creation of an Orthologous Gene Database
 
-## 1) Annotation des Génomes
+## 1) Genome Annotation
 
-Trois programmes différents ont été utilisés pour annoter les génomes :
+Three different programs were used to annotate the genomes:
 
 ### BUSCO (Benchmarking Universal Single-Copy Orthologs)
 
-Utilisé pour évaluer l'intégrité des assemblages de génomes et pour la prédiction de gènes en utilisant **AUGUSTUS**. Fonctionnement détaillé :
+Used to assess the integrity of genome assemblies and for gene prediction using **AUGUSTUS**. Detailed operation:
 
--   **Base de données BUSCO** : Utilise une bibliothèque d'orthologues à copie unique, conservés et présents sous une forme unique dans la plupart des génomes d'un groupe taxonomique. La bibliothèque adaptée à votre groupe doit être définit (`GROUPE_odb10`).
--   **Alignement et recherche des orthologues** : BUSCO compare les séquences fournies à la base de données des orthologues avec des outils comme **BLAST+** ou **HMMER**.
--   **Classification des orthologues** :
-    -   *Complets* : orthologues trouvés dans leur intégralité.
-    -   *Complets et dupliqués* : orthologues présents en plusieurs copies.
-    -   *Fragmentés* : orthologues trouvés partiellement.
-    -   *Manquants* : orthologues non trouvés.
--   **Évaluation de l'intégrité** : Génération de rapports indiquant le pourcentage de gènes complets, dupliqués, fragmentés et manquants.
+-   **BUSCO database**: Uses a library of single-copy orthologs, conserved and present in a unique form in most of the genomes of a taxonomic group. The library adapted to your group must be defined (`GROUPE_odb10`).
+-   **Alignment and ortholog search**: BUSCO compares the sequences provided with the ortholog database using tools such as **BLAST+** or **HMMER**.
+-   **Classification of orthologs** :
+    -   *Complete*: orthologs found in their entirety.
+    -   *Complete and duplicated*: orthologs present in several copies.
+    -   *Fragmented*: orthologs partially found.
+    -   *Missing*: orthologs not found.
+-   **Integrity assessment**: Generation of reports showing the percentage of complete, duplicated, fragmented and missing genes.
 
-BUSCO génère un fichier FASTA par gène. L'ensemble des fichiers FASTA des gènes classés complets (`single_copy_busco_sequences`) est compilé sous un seul fichier FASTA par espèce.
+BUSCO generates one FASTA file per gene. All the FASTA files for the complete classified genes (`single_copy_busco_sequences`) are compiled into a single FASTA file for each species.
 
 ### Miniprot
 
-Utilisé pour l'annotation des génomes en se basant sur des séquences de protéines. Fonctionnement détaillé :
+Used to annotate genomes based on protein sequences. Detailed operation:
 
--   **Préprocessing des séquences de protéines** : Miniprot utilise des séquences de protéines bien annotées pour le mappage.
--   **Mappage des protéines** : Les séquences sont alignées sur le génome cible pour identifier les régions correspondantes.
--   **Identification des exons et des introns** : Miniprot identifie les exons (codants) et les introns (non codants).
--   **Transfert des annotations** : Miniprot transfère les annotations de protéines au génome cible.
--   **Génération des rapports** : Les résultats sont produits au format GFF.
+-   **Protein sequence pre-processing**: Miniprot uses well-annotated protein sequences for mapping.
+-   **Protein mapping**: The sequences are aligned with the target genome to identify the corresponding regions.
+-   **Exon and intron identification**: Miniprot identifies exons (coding) and introns (non-coding).
+-   **Annotation transfer**: Miniprot transfers protein annotations to the target genome.
+-   **Report generation** : Results are produced in GFF format.
 
 ### Scipio
 
-Scipio est utilisé pour identifier les gènes codants et transférer des annotations fonctionnelles. Fonctionnement détaillé :
+Scipio is used to identify coding genes and transfer functional annotations. Detailed operation:
 
--   **Alignement de protéines** : Scipio aligne les séquences de protéines sur le génome cible.
--   **Identification des exons et introns** : Identification des exons et introns dans les régions alignées.
--   **Annotation des gènes** : Scipio transfère les annotations fonctionnelles des protéines vers le génome cible.
--   **Résultats** : Scipio produit des fichiers au format YAML avec les annotations de gènes.
+-   **Protein alignment**: Scipio aligns protein sequences to the target genome.
+-   **Exon and intron identification**: Identification of exons and introns in aligned regions.
+-   **Gene annotation**: Scipio transfers functional annotations of proteins to the target genome.
+-   **Results**: Scipio produces files in YAML format with gene annotations.
 
-L'annotation des génomes est réalisée en trois phases, chaque phase utilisant les séquences protéiques d'une espèce différente. Chaque génome est donc annoté trois fois.
+The genomes are annotated in three phases, with each phase using protein sequences from a different species. Each genome is therefore annotated three times.
 
-Les fichiers YAML issus de Scipio sont convertis en GFF, puis plusieurs étapes sont réalisées pour traiter et nettoyer les résultats des annotations de Miniprot et Scipio :
+The YAML files from Scipio are converted into GFF, and then several steps are carried out to process and clean up the results of the Miniprot and Scipio annotations:
 
-### Traitement des Fichiers GFF
+### Processing GFF files
 
-1.  **Copie** des trois fichiers GFF.
-2.  **Extraction des CDS** des fichiers GFF (`listAlternativeTranscript2.py`).
-3.  **Nettoyage des fichiers GFF** pour éliminer les transcrits alternatifs (`ExcludeCDSFromGFF.py`).
-4.  **Concaténation des fichiers GFF** des CDS nettoyés.
-5.  **Conversion des fichiers GFF en FASTA** pour obtenir les séquences exoniques (`putIDinNameGFF.py`).
-6.  **Concatenation** des exons en transcrits complets (`concateExonFromBedtoolsGetFasta2_forCat.py`).
+1.  **Copy** of the three GFF files.
+2.  **Extraction of CDS** from GFF files (`listAlternativeTranscript2.py`).
+3.  **Cleaning of GFF files** to eliminate alternative transcripts (`ExcludeCDSFromGFF.py`).
+4.  **Reconciliation of cleaned CDS GFF** files.
+5.  **Conversion of GFF files to FASTA** to obtain exonic sequences (`putIDinNameGFF.py`).
+6.  **Concatenation** of exons into full transcripts (`concateExonFromBedtoolsGetFasta2_forCat.py`).
 
-### Sélection et Traduction des Gènes
+### Gene Selection and Translation
 
-1.  **Tri des gènes** pour éliminer les exons chevauchants (`SelectOverlappingExonGFFsort_forCat.py`).
-2.  **Récupération** des transcrits uniques (`copySeqList.py`).
-3.  **Traduction des transcrits** en séquences protéiques.
-4.  **Liste des transcrits** redondants (`RenameTranscriptRedundants_forList.py`).
-5.  **Renommage des transcrits** redondants (`RenameTranscriptRedundants_forFasta.py`).
-6.  **Sélection des transcrits** finaux (`SelectSeq.py`).
-7.  **Renommage des transcrits** avec des informations spécifiques à l'espèce.
+1.  **Gene sorting** to eliminate overlapping exons (`SelectOverlappingExonGFFsort_forCat.py`).
+2.  **Recovery** of single transcripts (`copySeqList.py`).
+3.  **Translation of transcripts** into protein sequences.
+4.  **List of redundant** transcripts (`RenameTranscriptRedundants_forList.py`).
+5.  **Renaming of redundant** transcripts (`RenameTranscriptRedundants_forFasta.py`).
+6.  **Selection of final** transcripts (`SelectSeq.py`).
+7.  **Transcript renaming** with species-specific information.
 
-Des scripts bash ont été créés pour automatiser ces étapes pour les sorties de **Miniprot** et **Scipio** : - `Script_concatenateGFF_Miniprot.bash` - `Script_concatenateGFF_Scipio.bash`
+Bash scripts have been created to automate these steps for the outputs of **Miniprot** and **Scipio** : - `Script_concatenateGFF_Miniprot.bash` - `Script_concatenateGFF_Scipio.bash`
 
-Après l'annotation, nous avons traité les résultats de manière indépendante pour chaque jeu de gènes produits par **BUSCO**, **Miniprot** et **Scipio**.
+After annotation, we processed the results independently for each set of genes produced by **BUSCO**, **Miniprot** and **Scipio**.
 
 ------------------------------------------------------------------------
 
-## 2) Recherche de Gènes Orthologues
+## 2)  Search for Orthologous Genes
