@@ -62,7 +62,7 @@ The YAML files from Scipio are converted into GFF, and then several steps are ca
 6.  **Selection of final** transcripts (`SelectSeq.py`).
 7.  **Transcript renaming** with species-specific information.
 
-Bash scripts have been created to automate these steps for the outputs of **Miniprot** and **Scipio** : - `Script_concatenateGFF_Miniprot.bash` - `Script_concatenateGFF_Scipio.bash`
+Bash scripts have been created to automate these steps for the outputs of **Miniprot** and **Scipio** : - `Annotation_Miniprot_concatenate.bash` - `Annotation_Scipio_concatenate.bash`
 
 After annotation, we processed the results independently for each set of genes produced by **BUSCO**, **Miniprot** and **Scipio**.
 
