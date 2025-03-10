@@ -70,7 +70,7 @@ After annotation, we processed the results independently for each set of genes p
 
 ## 2)  Search for Orthologous Genes
 
-Once the genomes were annotated, we used **OrthoFinder** (version 2.5.4) (Emms & Kelly 2015, 2019) to identify 1:1 orthologous genes between species. OrthoFinder searches for orthogroups and orthologs, constructs gene trees for orthogroups, and identifies gene duplication events. It generates a rooted species tree for the studied species and maps gene duplication events from the gene trees to the species tree. To run OrthoFinder, a set of protein sequence files for each species in FASTA format is required. Thus, we retrieved the BUSCO sequences, which were grouped into a single FASTA file per species, and the Scipio and Miniprot outputs, which were processed and converted to FASTA format.
+Once the genomes were annotated, we used **OrthoFinder** (version 2.5.4) (Emms & Kelly 2015) to identify 1:1 orthologous genes between species. OrthoFinder searches for orthogroups and orthologs, constructs gene trees for orthogroups, and identifies gene duplication events. It generates a rooted species tree for the studied species and maps gene duplication events from the gene trees to the species tree. To run OrthoFinder, a set of protein sequence files for each species in FASTA format is required. Thus, we retrieved the BUSCO sequences, which were grouped into a single FASTA file per species, and the Scipio and Miniprot outputs, which were processed and converted to FASTA format.
 
 ### Selection of orthogroups
 
@@ -86,12 +86,13 @@ This search for orthologous genes provided the list of orthogroups to be retriev
 
 ## 3)  Alignment of orthologous gene sequences
 
-To align the orthologous gene sequences, we used **SINGULARITY** (3.10.4) to run **MACSE** (Multiple Alignment of Coding Sequences) (omm_macse_v11.05b.sif) (Scornavacca et al. 2019; Ranwez et al. 2021), a tool used to align gene sequences while taking codon structure into account, which is crucial for maintaining the consistency of reading frames in coding sequences. The program `omm_macse_v11.05b.sif` includes **HMMCLeaner** as an integrated cleaning tool. Again, these steps were performed independently for each genome annotation method (BUSCO, Miniprot, and Scipio).
+To align the orthologous gene sequences, we used **SINGULARITY** (3.10.4) to run **MACSE** (Multiple Alignment of Coding Sequences) (omm_macse_v11.05b.sif) (Ranwez et al. 2021), a tool used to align gene sequences while taking codon structure into account, which is crucial for maintaining the consistency of reading frames in coding sequences. The program `omm_macse_v11.05b.sif` includes **HMMCLeaner** as an integrated cleaning tool. Again, these steps were performed independently for each genome annotation method (BUSCO, Miniprot, and Scipio).
 
 Before performing the alignments, a data preparation phase from OrthoFinder outputs was necessary:
 
 -   **Transfer of orthologous folders**: The orthogroup folders (`Orthogroup_Sequences`) from OrthoFinder, containing a file per gene sequence, were copied into a new folder (`Orthogroup_Sequences_faa`) in the alignment directory (`Alignment`), with an independent subdirectory for each set from the three annotation methods (`Align_Busco`; `Align_Miniprot`; `Align_Scipio`).
--   **Retrieval of nucleotide sequences**: The alignment requires nucleotide-level sequences and not amino acid sequences, so it was necessary to retrieve the corresponding sequences by going back to the gene annotation stage: Busco: For the set from the Busco annotation, this involved selecting the ".fna" files in the `single_copy_busco_sequences` output directory for each species. Miniprot & Scipio: For the other two, we went back to the step of sorting alternative transcripts to select unique transcripts from the nucleotide sequences (`Script_GetFnaSequencesForAlignment_Miniprot.bash`; `Script_GetFnaSequencesForAlignment_Scipio.bash`). Concatenation: All retrieved nucleotide sequences were grouped into a single FASTA file for each different annotation set (`fasta_file.fna`).
+-   **Retrieval of nucleotide sequences**: The alignment requires nucleotide-level sequences and not amino acid sequences, so it was necessary to retrieve the corresponding sequences by going back to the gene annotation stage.
+-   **Concatenation**: All retrieved nucleotide sequences were grouped into a single FASTA file for each different annotation set (`fasta_file.fna`).
 -   **Creation of alignments for each orthologous gene**: The alignment is performed on a FASTA file containing all nucleotide sequences of the genes (here orthologous) from the different species. In our case, this corresponds to a FASTA file per orthogroup:
     -   **Copying .faa files while keeping only the gene names**: To retain the structure of the ".faa" files, which contain all genes of a given orthogroup, for each file, we copied the names of the sequences into another ".txt" file (`CopySeqFileByFile_Part1.sh`). This step allowed us to keep the names of the genes grouped in an orthogroup without their associated amino acid sequences for each previously selected orthogroup (`Orthogroup_Sequences_txt`).
     -   **Cleaning the .txt files**: In the ".txt" files, containing only the gene names of each orthogroup, we removed the gene names of the species possessing two paralogous genes. Then, we deleted the ".txt" files that had fewer than 5 genes.
@@ -111,7 +112,7 @@ The alignments of the orthologous gene sequences were cleaned using the PhylteR 
 
 PhylteR detects aberrant gene family taxa in phylogenomic datasets, allowing for the removal of outlier genes. Thus, we sought to obtain gene trees from our orthologous gene alignments:
 
--   **Transfer of alignment files**: The nucleotide-level masked alignment files (`{OG_CODE}_macse_final_mask_align_NT.aln`) generated by MACSE were transferred into a directory containing a folder for each alignment (`Gene_Trees`) within the directory specific to each annotation method (`PhylteR_Busco`; `PhylteR_Miniprot`; `PhylteR_Scipio`).
+-   **Transfer of alignment files**: The nucleotide-level masked alignment files (`{OG_CODE}_macse_final_mask_align_NT.aln`) generated by MACSE were transferred into a directory containing a folder for each alignment (`Alignment_Phylter_Busco`;`Alignment_Phylter_Miniprot`;`Alignment_Phylter_Scipio`) within the directory specific to each annotation method (`PhylteR_Busco`; `PhylteR_Miniprot`; `PhylteR_Scipio`).
 -   **Construction of gene trees**: The gene trees for each renamed alignment were constructed using IQTree and its iqtree2 program under the GTR+G4 model.
 
 ### Data preparation for PhylteR (Comte et al. 2023)
@@ -119,7 +120,7 @@ PhylteR detects aberrant gene family taxa in phylogenomic datasets, allowing for
 PhylteR takes as input a collection of phylogenetic trees (which it then converts into distance matrices), as well as a list of gene names ordered to correspond with the gene trees. In our case, these names correspond to those of our orthogroups:
 
 -   **Collection of gene trees**: We concatenated all **IQTree** (2.2.2.6 COVID-edition) (Minh et al. 2020) output files (`{OG_CODE}_macse_final_mask_align_NT.aln.treefile`) in Newick format into a single file (`treefiles.tre`).
--   **Renaming of gene names**: The gene names in the file containing all gene trees (`treefiles.tre`) were standardized to retain only the species name (`treefiles_rename.tre`).
+-   **Renaming of gene names**: The gene names in the file containing all gene trees (`treefiles.tre`) were standardized to retain only the species name.
 -   **List of orthogroup names**: We also retrieved the list of orthogroup names associated with each ".treefile" (`list_treefiles.txt`).
 -   **Execution of PhylteR**: To run PhylteR, we provided the corresponding script (`Script_PhylteR.r`) as input to the Rscript command.
 -   **Removal of identified outliers**: PhylteR outputs a ".out" file (`phylter_Busco.out`; `phylter_Miniprot.out`; `phylter_Scipio.out`), which contains a list of all taxa detected as outliers and categorized by the name of the gene tree they belong to (the orthogroup names in our case). To process this output file and remove the outlier genes from our alignments, we created a Python program that takes the ".out" file and the directory containing copies of the alignments to filter as input (`PruneAlnFiles.sh`). This step allowed us to obtain alignments cleaned of taxa with aberrant values, renamed "pruned" or "filtered" according to the defined suffix.
@@ -187,7 +188,9 @@ This section, which first focused on identifying the common orthologous genes be
 
 ------------------------------------------------------------------------
 
-## 6)  Creation of HMM Profiles for OrthoPap Alignments
+## 7) Addition of new species to the alignments obtained by orthoPap
+
+### Creation of HMM Profiles for OrthoPap Alignments
 
 After aligning the orthologous sequences, we built HMM (Hidden Markov Models) profiles using **HMMER** (version 3.3.1) (Eddy 2011) for each orthologous alignment:
 
@@ -197,12 +200,40 @@ After aligning the orthologous sequences, we built HMM (Hidden Markov Models) pr
 
 This step allowed the creation of a robust orthologous gene database for the Papilionidae, providing a valuable tool for future phylogenetic studies and research on molecular evolution and adaptation within this taxonomic group.
 
+### Annotation of new species
 
+The same annotation procedure as for OrthoPap has been used in this example application.
 
+### Search for orthologous genes of new species
 
+To find the orthologous genes of the new species corresponding to those obtained using the OrthoPap method, we used the HMMER and the profiles produced previously.
 
+-   **Search for profiles against sequences**: The `hmmsearch` command has been used between the annotated genomes of the new species and the profiles derived from the OrthoPap.
 
+-   **Search for sequences against profiles**: The `hmmscan` command has been used between the annotated genes of the new species and the profiles derived from the OrthoPap.
 
+-   **Verification of the consistency of the previous two searches**: Potential inconsistencies in the reciprocity search between the profiles corresponding to the new species sequences and the new species sequences corresponding to the profiles were resolved using the R script (`best_reciprocal_hmm.R`).
 
+### Alignment of new species by enrichment
 
+The **MACSE** (version 2.07) (Ranwez et al. 2018) `enrichAlignment` command was used to align new species with those used for OrthoPap. The principle is to add the sequences of the new species to the corresponding alignments according to the previous correspondence search performed on the HMM profiles.
 
+------------------------------------------------------------------------
+
+## Reference of software used
+
+Eddy SR. 2011. Accelerated Profile HMM Searches. PLoS Comput. Biol. 7:e1002195. doi: 10.1371/journal.pcbi.1002195.
+
+Emms DM, Kelly S. 2019. OrthoFinder: phylogenetic orthology inference for comparative genomics. Genome Biol. 20:238. doi: 10.1186/s13059-019-1832-y.
+
+Keller O, Odronitz F, Stanke M, Kollmar M, Waack S. 2008. Scipio: Using protein sequences to determine the precise exon/intron structures of genes and their orthologs in closely related species. BMC Bioinformatics. 9:278. doi: 10.1186/1471-2105-9-278.
+
+Li H. 2023. Protein-to-genome alignment with miniprot. Bioinforma. Oxf. Engl. 39:btad014. doi: 10.1093/bioinformatics/btad014.
+
+Manni M, Berkeley MR, Seppey M, Simão FA, Zdobnov EM. 2021. BUSCO Update: Novel and Streamlined Workflows along with Broader and Deeper Phylogenetic Coverage for Scoring of Eukaryotic, Prokaryotic, and Viral Genomes. Mol. Biol. Evol. 38:4647–4654. doi: 10.1093/molbev/msab199.
+
+Minh BQ et al. 2020. IQ-TREE 2: New Models and Efficient Methods for Phylogenetic Inference in the Genomic Era. Mol. Biol. Evol. 37:1530–1534. doi: 10.1093/molbev/msaa015.
+
+Ranwez V, Chantret N, Delsuc F. 2021. Aligning Protein-Coding Nucleotide Sequences with MACSE. In: Multiple Sequence Alignment: Methods and Protocols. Katoh, K, editor. Springer US: New York, NY pp. 51–70. doi: 10.1007/978-1-0716-1036-7_4.
+
+Ranwez V, Douzery EJP, Cambon C, Chantret N, Delsuc F. 2018. MACSE v2: Toolkit for the Alignment of Coding Sequences Accounting for Frameshifts and Stop Codons. Mol. Biol. Evol. 35:2582–2584. doi: 10.1093/molbev/msy159.
