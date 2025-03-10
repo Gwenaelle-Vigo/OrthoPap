@@ -188,7 +188,7 @@ This section, which first focused on identifying the common orthologous genes be
 
 ------------------------------------------------------------------------
 
-## 7) Addition of new species to the alignments obtained by orthoPap
+## 6) Addition of new species to the alignments obtained by orthoPap
 
 ### Creation of HMM Profiles for OrthoPap Alignments
 
